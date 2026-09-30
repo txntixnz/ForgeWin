@@ -1,9 +1,9 @@
-# ForgeWin P1 handoff — 2026-09-30
+# ForgeWin P2 handoff
 
-Repo: txntixnz/ForgeWin. User authorized implementation, pushing and building. GitHub connector is available: use it directly. No need to ask for repo links or manual uploads.
+Repo txntixnz/ForgeWin, authorized direct pushes and Actions builds. Use GitHub connector, do not request user to upload files manually. User prefers brief replies.
 
-P0 ran on the user's iPhone with iOS 16.0: sum55.exe returned RAX=55 in 33 instructions. P1 adds ModRM/SIB memory operands and bounded PE imports for three KERNEL32 prototype shims: ExitProcess, OutputDebugStringA, GetTickCount64. Timer epoch is virtual guest creation. Not full Windows semantics. No real DLL loading.
+P0 phone validation: 55/33 instructions. P1 phone validation: exit 71, memory + Windows imports OK, 29 steps. Current next test P2: MSVC-compiled C program, expected exit251 and "ForgeWin P2: compiled C program OK". Native Windows execution plus SHA-identical emulation gates IPA creation. Check current Actions run for build success and P2 device log for hardware status.
 
-New fixture winapi71.exe sums array values 7,11,13,17,23 using indexed memory, stores/reloads stack locals, calls all three imports, emits "ForgeWin P1: memory + Windows imports OK", exits 71. Original fixture remains a regression. iOS button now launches new fixture; same bundle ID, version 0.0.2/build 2. Build generates both PE files and bundles them.
+Windows guest source guest/compiled251.c; tools/build-guest.cmd uses installed Visual Studio; workflow has windows-guest then macOS build job. Upload includes compiler assembly and disassembly. No CRT, only KERNEL32 ExitProcess/OutputDebugStringA imports. Core still very incomplete: no graphics/JIT/SSE/AVX/real DLLs/general WinAPI. Do not overclaim gaming readiness.
 
-Portable tests cover old operations, memory access, sign extension, RIP-relative immediate semantics, API output/exit, unknown imports, malformed descriptors, budgets and 3000 malformed PE mutations. Check VALIDATION.txt and latest Actions status. Device verification of P1 is pending. Do not claim game compatibility, graphics, JIT, SSE/AVX, threads or full WinAPI. Next: obtain P1 phone log, expand instruction correctness, then an independently compiled minimal Windows program. User prefers brief messages and direct work.
+Version 0.0.3/build3, same bundle ID. tools/check-compiled.py validates SHA and native/emulated exit+debug message before packaging. New instruction support: signed IMUL, MOVSXD REX.W, TEST, INC/DEC (CF preserved), accumulator immediate forms, multi-byte NOP. Prior tests retained.

@@ -135,6 +135,14 @@ struct CPU {
         of=logic?false:((sub?((a^b)&(a^v)):(~(a^b)&(a^v)))&sign)!=0;
         unsigned ones=0;for(unsigned i=0;i<8;++i) ones+=unsigned((v>>i)&1);pf=(ones%2)==0;return v;
     }
+    uint64_t multiply(uint64_t a,uint64_t b,unsigned w) {
+        __int128 left=w==64?__int128(int64_t(a)):__int128(int32_t(a));
+        __int128 right=w==64?__int128(int64_t(b)):__int128(int32_t(b));
+        __int128 product=left*right;
+        uint64_t low=uint64_t(product)&mask(w);
+        __int128 extended=w==64?__int128(int64_t(low)):__int128(int32_t(low));
+        cf=of=product!=extended;return low;
+    }
     bool condition(unsigned c) {switch(c){case 0:return of;case 1:return !of;case 2:return cf;case 3:return !cf;case 4:return zf;case 5:return !zf;case 6:return cf||zf;case 7:return !cf&&!zf;case 8:return sf;case 9:return !sf;case 10:return pf;case 11:return !pf;case 12:return sf!=of;case 13:return sf==of;case 14:return zf||sf!=of;default:return !zf&&sf==of;}}
     struct Operand { bool reg=false,rip=false; unsigned index=0; uint64_t base=0; };
     Operand decode(unsigned mr,unsigned rex) {
@@ -179,16 +187,27 @@ struct CPU {
         if(op>=0x50&&op<=0x57){push(r[(op-0x50)|((rex&1)?8:0)]);return;}
         if(op>=0x58&&op<=0x5f){auto v=pop();r[(op-0x58)|((rex&1)?8:0)]=v;return;}
         if(op==0x90){if(rex&1)throw Fault("Extended XCHG not implemented");return;}
+        if(op==0x05||op==0x2d||op==0x3d){auto imm=uint64_t(int64_t(int32_t(fetch(4))));auto v=alu(r[0],imm,w,op!=0x05);if(op!=0x3d)writeReg(0,v,w);return;}
         if(op==0xc3){ip=pop();if(ip==0)returned=true;return;}
         if(op==0xe8||op==0xe9){auto d=int32_t(fetch(4));auto target=ip+uint64_t(int64_t(d));if(op==0xe8)push(ip);ip=target;return;}
         if(op==0xeb){auto d=int8_t(fetch(1));ip+=uint64_t(int64_t(d));return;}
         if(op>=0x70&&op<=0x7f){auto d=int8_t(fetch(1));if(condition(op&15))ip+=uint64_t(int64_t(d));return;}
-        if(op==0x0f){unsigned op2=unsigned(fetch(1));if(op2>=0x80&&op2<=0x8f){auto d=int32_t(fetch(4));if(condition(op2&15))ip+=uint64_t(int64_t(d));return;}throw Fault("Unsupported 0F opcode "+hex(op2));}
-        if(op==0xc7||op==0x8d||op==0xff||op==0x89||op==0x8b||op==0x31||op==0x33||op==0x01||op==0x03||op==0x29||op==0x2b||op==0x39||op==0x3b||op==0x83||op==0x81) {
+        if(op==0x0f){
+            unsigned op2=unsigned(fetch(1));
+            if(op2>=0x80&&op2<=0x8f){auto d=int32_t(fetch(4));if(condition(op2&15))ip+=uint64_t(int64_t(d));return;}
+            if(op2==0xaf){unsigned mr=unsigned(fetch(1));auto src=decode(mr,rex);unsigned dst=((mr>>3)&7)|((rex&4)?8:0);auto v=multiply(r[dst],value(src,w),w);writeReg(dst,v,w);return;}
+            if(op2==0x1f){unsigned mr=unsigned(fetch(1));if((mr&0x38)!=0)throw Fault("Invalid NOP");decode(mr,rex);return;}
+            throw Fault("Unsupported 0F opcode "+hex(op2));
+        }
+        if(op==0x63||op==0x69||op==0x6b||op==0x85||op==0xc7||op==0x8d||op==0xff||op==0x89||op==0x8b||op==0x31||op==0x33||op==0x01||op==0x03||op==0x29||op==0x2b||op==0x39||op==0x3b||op==0x83||op==0x81) {
             unsigned mr=unsigned(fetch(1)), group=(mr>>3)&7;
             Operand a=decode(mr,rex),b{true,false,group|((rex&4)?8u:0u),0};
+            if(op==0x63){if(w!=64)throw Fault("MOVSXD requires REX.W in P2");writeReg(b.index,uint64_t(int64_t(int32_t(value(a,32)))),64);return;}
+            if(op==0x69||op==0x6b){auto imm=op==0x69?uint64_t(int64_t(int32_t(fetch(4)))):uint64_t(int64_t(int8_t(fetch(1))));writeReg(b.index,multiply(value(a,w),imm,w),w);return;}
+            if(op==0x85){auto v=value(a,w)&value(b,w);alu(v,0,w,false,true);return;}
             if(op==0x8d){if(a.reg)throw Fault("Invalid LEA");writeReg(b.index,address(a),w);return;}
             if(op==0xff){
+                if(group==0||group==1){bool oldCF=cf;auto v=alu(value(a,w),1,w,group==1);cf=oldCF;store(a,v,w);return;}
                 if(group!=2&&group!=4&&group!=6)throw Fault("Unsupported FF group");
                 auto target=value(a,64);if(group==6){push(target);return;}if(group==2)push(ip);ip=target;return;
             }
@@ -206,7 +225,7 @@ struct CPU {
     std::string state() const {std::ostringstream o;o<<"RIP="<<hex(ip)<<" last="<<hex(lastIP)<<" instructions="<<steps<<"\n";const char* names[]={"RAX","RCX","RDX","RBX","RSP","RBP","RSI","RDI","R8","R9","R10","R11","R12","R13","R14","R15"};for(unsigned i=0;i<16;++i)o<<names[i]<<"="<<hex(r[i])<<((i%4==3)?"\n":" ");o<<"Last instruction addresses:";for(auto a:trace)o<<" "<<hex(a);return o.str();}
 };
 inline std::string execute(const Bytes& file) {
-    Memory m;std::ostringstream log;log<<"ForgeWin P1 — interpreter diagnostic\n";
+    Memory m;std::ostringstream log;log<<"ForgeWin P2 — interpreter diagnostic\n";
     try {auto img=loadPE(file,m);log<<"AMD64 PE32+ base="<<hex(img.base)<<" entry="<<hex(img.entry)<<" sections="<<img.sections<<"\n";
         CPU c(m);c.start(img.entry);try{c.run();if(c.exited)log<<"ExitProcess code="<<c.exitCode<<"\n";else log<<"Guest entry returned RAX="<<c.r[0]<<"\n";}catch(const std::exception& e){log<<"STOP: "<<e.what()<<"\n";}log<<"Guest debug output: "<<c.output<<"\n";log<<c.state()<<"\n";
     }catch(const std::exception& e){log<<"LOAD STOP: "<<e.what()<<"\n";}return log.str();

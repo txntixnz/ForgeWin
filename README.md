@@ -1,27 +1,29 @@
-# ForgeWin P1 — memory and Windows API milestone
+# ForgeWin P2 — compiled Windows C program
 
-Targets iPhone 13 Pro Max / iOS 16.0. From-scratch interpreter; no UTM.
+A from-scratch experimental x64 Windows execution core for iPhone / iOS 16.0. No UTM. **Not game compatible.**
 
-## Install/test this version
+## Install
 
-Download the latest successful **ForgeWin_P1_iOS16_IPA** artifact from this repository's Actions tab. Extract it, update the existing app through TrollStore, then tap **Run memory + Windows API test**. Share its diagnostic log.
+Open Actions, choose the latest successful **ForgeWin P2 iOS 16 IPA** run, download **ForgeWin_P2_iOS16_IPA**, extract and update through TrollStore. Tap **Run compiled Windows C test** and share the diagnostic log.
 
-Expected: `ExitProcess code=71` and `ForgeWin P1: memory + Windows imports OK`.
+Expected: `ExitProcess code=251` and `ForgeWin P2: compiled C program OK`.
 
-## Added in P1
+## What this milestone checks
 
-- 64-bit ModRM/SIB addressing with displacement, index scale, REX base/index extensions and RIP-relative references for supported 32/64-bit operations.
-- Memory forms of MOV, ADD, SUB, XOR, CMP; LEA; C7 immediate moves; FF indirect call/jump and push.
-- Bounded PE import descriptor/thunk/name parsing and IAT binding.
-- Three KERNEL32.dll **prototype shims**: ExitProcess stops the guest and records its code; OutputDebugStringA captures bounded text in the report; GetTickCount64 reports monotonic milliseconds since this guest execution was created (virtual boot). This is not host Windows uptime or a full Windows service implementation.
-- API entry validates x64 stack alignment. No real Windows DLL is loaded.
-- New generated executable uses an indexed array sum, stack locals, RIP-relative addressing and all three imports. Its expected exit code is 71. Original sum55 test remains in the regression suite.
+`guest/compiled251.c` is compiled by Microsoft Visual C on a Windows GitHub runner into an actual AMD64 Windows PE. The C source uses volatile array input, a non-inlined function, a loop, signed multiplication, a branch, debug output and process exit. No machine-code generator creates this test. The earlier Python-generated fixtures remain as regression tests.
 
-P0 was successfully compiled on GitHub and its sum55 fixture passed on the user's iPhone running iOS 16.0. P1 requires a new physical-device test. See Actions for its current build status.
+The CI workflow runs this EXE natively on Windows, requires exit code 251, records its SHA-256, then downloads the exact file to the macOS job. ForgeWin must execute those same bytes and match both exit code and debug output before packaging the EXE inside the IPA. Source, compiler assembly listing and disassembly are in the `compiled-windows-guest` artifact; the execution report is in `P2-emulator-report`.
 
-Still absent: most Windows APIs, real DLL loading, TLS, exceptions, threads, most x64 instruction families (including SSE/AVX), graphics, DirectX/Vulkan translation, audio and JIT. **Fallout 4, Cyberpunk and RDR2 cannot run.** These remain research goals, not promised compatibility.
+P2 adds signed IMUL (32/64-bit register/memory and immediate forms), MOVSXD with REX.W, INC/DEC with carry preservation, TEST, accumulator ADD/SUB/CMP and multi-byte NOP decoding. Tests check multiplication overflow and earlier P0/P1 functionality. Only these supported widths/forms are implemented.
 
-Run `bash tools/test.sh` for portable sanitizer-backed tests. In restricted Linux hosts use `ASAN_OPTIONS=detect_leaks=0 bash tools/test.sh`. Build the IPA on a Mac with Xcode using `bash tools/build-ios.sh`; GitHub Actions runs both steps automatically on pushes to main/master. Test executables are generated from source during every build.
+## Status and limits
 
-Source references: [PE format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format), [x64 ABI](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention), [GetTickCount64](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount64).
+P0 and P1 passed on the user's iPhone running iOS 16.0. P2 needs its own device test. See Actions for current build evidence.
 
+This is a narrow, no-CRT C test. It does not demonstrate general Windows application compatibility. No real Windows DLLs are loaded: only three KERNEL32 prototype shims exist (ExitProcess, OutputDebugStringA, GetTickCount64). The clock reports virtual guest elapsed milliseconds. No graphics, audio, DirectX, Vulkan, JIT, SSE/AVX, TLS, Windows threads, exceptions or C runtime. Fallout 4, Cyberpunk 2077 and RDR2 remain unsupported.
+
+## Build
+
+GitHub Actions handles both Windows and macOS stages. For local testing, run `bash tools/test.sh` (or `ASAN_OPTIONS=detect_leaks=0 bash tools/test.sh` in hosts with restricted leak inspection). To build locally on a Mac, first place the native-verified `compiled251.exe` and `compiled251-native.json` from the Windows artifact into `tests/`, run portable tests, then `bash tools/build-ios.sh`.
+
+References: [Microsoft x64 ABI](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention), [Microsoft PE format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format).

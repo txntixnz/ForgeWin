@@ -1,8 +1,9 @@
 Generated tests/sum55.exe: expected RAX=55
 Generated tests/winapi71.exe: expected ExitProcess code=71
+PASS: P2 signed multiply, overflow flags, MOVSXD and INC carry preservation
 PASS: P1 memory addressing, stack, SIB, RIP-relative immediate, import resolution, debug output, exit code 71
 PASS: sum, register widths, carry, calls, REX, rejection paths, permissions, budget, 3000 malformed PE mutations
-ForgeWin P1 — interpreter diagnostic
+ForgeWin P2 — interpreter diagnostic
 AMD64 PE32+ base=0x140000000 entry=0x140001000 sections=1
 Guest entry returned RAX=55
 Guest debug output: 
@@ -12,7 +13,7 @@ RSP=0x70000fffe0 RBP=0x0 RSI=0x0 RDI=0x0
 R8=0x0 R9=0x0 R10=0x0 R11=0x0
 R12=0x0 R13=0x0 R14=0x0 R15=0x0
 Last instruction addresses: 0x140001002 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x140001007 0x140001009 0x14000100c 0x14000100e
-ForgeWin P1 — interpreter diagnostic
+ForgeWin P2 — interpreter diagnostic
 AMD64 PE32+ base=0x140000000 entry=0x140001000 sections=2
 ExitProcess code=71
 Guest debug output: ForgeWin P1: memory + Windows imports OK
