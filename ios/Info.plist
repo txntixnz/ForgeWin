@@ -4,10 +4,10 @@
 <key>CFBundleExecutable</key><string>ForgeWin</string>
 <key>CFBundleIdentifier</key><string>personal.forgewin.prototype</string>
 <key>CFBundleName</key><string>ForgeWin</string>
-<key>CFBundleDisplayName</key><string>ForgeWin P0</string>
+<key>CFBundleDisplayName</key><string>ForgeWin P1</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.0.1</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>0.0.2</string>
+<key>CFBundleVersion</key><string>2</string>
 <key>MinimumOSVersion</key><string>16.0</string>
 <key>LSRequiresIPhoneOS</key><true/>
 <key>UIDeviceFamily</key><array><integer>1</integer></array>

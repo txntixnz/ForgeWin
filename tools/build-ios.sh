@@ -14,10 +14,11 @@ xcrun --sdk iphoneos clang++ -std=c++17 -O2 -arch arm64 \
   -o "$app/ForgeWin"
 cp ios/Info.plist "$app/Info.plist"
 cp tests/sum55.exe "$app/sum55.exe"
+cp tests/winapi71.exe "$app/winapi71.exe"
 plutil -lint "$app/Info.plist"
 codesign --force --sign - "$app"
 codesign --verify --strict "$app"
 # Ad-hoc signature for TrollStore/jailbreak installation, not App Store/distribution signing.
-rm -f build/ForgeWin_P0_iOS16.ipa
-(cd build/ios && zip -qr ../ForgeWin_P0_iOS16.ipa Payload)
-echo 'Created build/ForgeWin_P0_iOS16.ipa (ad-hoc signed; device validation required)'
+rm -f build/ForgeWin_P1_iOS16.ipa
+(cd build/ios && zip -qr ../ForgeWin_P1_iOS16.ipa Payload)
+echo 'Created build/ForgeWin_P1_iOS16.ipa (ad-hoc signed; device validation required)'

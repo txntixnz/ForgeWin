@@ -8,3 +8,5 @@ cxx="${CXX:-c++}"
 ./build/tests
 "$cxx" -std=c++17 -O2 -Wall -Wextra -Werror core/main.cpp -o build/forgewin
 ./build/forgewin tests/sum55.exe
+
+./build/forgewin tests/winapi71.exe

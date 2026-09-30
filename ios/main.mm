@@ -16,19 +16,19 @@
 }
 - (void)viewDidLoad {
     [super viewDidLoad];self.view.backgroundColor=UIColor.systemBackgroundColor;
-    UILabel *title=[UILabel new];title.text=@"ForgeWin · P0";title.font=[UIFont boldSystemFontOfSize:30];
+    UILabel *title=[UILabel new];title.text=@"ForgeWin · P1";title.font=[UIFont boldSystemFontOfSize:30];
     UILabel *subtitle=[UILabel new];subtitle.text=@"Experimental Windows execution core\niPhone · ARM64 · iOS 16+";subtitle.numberOfLines=0;subtitle.textColor=UIColor.secondaryLabelColor;
-    self.demoButton=[self button:@"Run built-in x64 test" action:@selector(runDemo)];
+    self.demoButton=[self button:@"Run memory + Windows API test" action:@selector(runDemo)];
     self.openButton=[self button:@"Open .exe for diagnostics" action:@selector(openFile)];
     self.shareButton=[self button:@"Share diagnostic log" action:@selector(shareLog)];
     self.output=[UITextView new];self.output.editable=NO;self.output.font=[UIFont monospacedSystemFontOfSize:12 weight:UIFontWeightRegular];
-    self.output.text=@"P0 is an interpreter prototype.\n\nThe built-in PE executable calculates 10+9+...+1 using guest x86-64 instructions. Expected RAX: 55.\n\nCommercial games are unsupported. No Windows DLL APIs, DirectX, Vulkan, graphics translation, audio or JIT are implemented.\n\nUnsupported instructions stop with a register dump. Imported EXEs with Windows DLL dependencies stop at the loader.";
+    self.output.text=@"P1: guest memory + Windows API test.\n\nThe test reads an array through indexed x64 addressing, uses stack memory, resolves KERNEL32 imports and prints a debug message.\n\nExpected: ExitProcess code=71\nForgeWin P1: memory + Windows imports OK\n\nCommercial games remain unsupported. There is no graphics, audio or JIT support yet. Only three prototype Windows API shims are implemented.";
     UIStackView *stack=[[UIStackView alloc] initWithArrangedSubviews:@[title,subtitle,self.demoButton,self.openButton,self.shareButton,self.output]];
     stack.axis=UILayoutConstraintAxisVertical;stack.spacing=12;stack.translatesAutoresizingMaskIntoConstraints=NO;[self.view addSubview:stack];
     UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[[stack.topAnchor constraintEqualToAnchor:safe.topAnchor constant:16],[stack.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:16],[stack.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-16],[stack.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor constant:-12]]];
 }
-- (void)runDemo { [self executeURL:[[NSBundle mainBundle] URLForResource:@"sum55" withExtension:@"exe"]]; }
+- (void)runDemo { [self executeURL:[[NSBundle mainBundle] URLForResource:@"winapi71" withExtension:@"exe"]]; }
 - (void)openFile {
     UIDocumentPickerViewController *picker=[[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTTypeData] asCopy:YES];picker.delegate=self;[self presentViewController:picker animated:YES completion:nil];
 }
@@ -40,7 +40,7 @@
         @autoreleasepool {
             NSString *report=nil;NSNumber *size=nil;NSError *error=nil;
             [url getResourceValue:&size forKey:NSURLFileSizeKey error:&error];
-            if(!size||size.unsignedLongLongValue>64ull*1024*1024){report=@"Cannot read file, or file exceeds P0's 64 MiB limit.";}
+            if(!size||size.unsignedLongLongValue>64ull*1024*1024){report=@"Cannot read file, or file exceeds P1's 64 MiB limit.";}
             else {
                 NSData *data=[NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&error];
                 if(!data){report=[NSString stringWithFormat:@"Read failed: %@",error.localizedDescription];}
